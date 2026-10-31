@@ -6,6 +6,7 @@ if (!fs.existsSync(ruta)) { console.error('No existe ' + ruta + '. Ejecuta antes
 let xml = fs.readFileSync(ruta, 'utf8');
 const permisos = [
   '<uses-permission android:name="android.permission.BLUETOOTH" />',
+  '<uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />',
   '<uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />',
   '<uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:usesPermissionFlags="neverForLocation" />',
   '<uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />',
@@ -54,12 +55,62 @@ if (act) {
     '    @Override\n' +
     '    public void onCreate(Bundle savedInstanceState) {\n' +
     '        registerPlugin(AudioFocoPlugin.class);\n' +
+    '        registerPlugin(InstaladorPlugin.class);\n' +
     '        super.onCreate(savedInstanceState);\n' +
     '        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);\n' +
     '    }\n' +
     '}\n';
   fs.writeFileSync(act, j);
   // Foco de audio: al sonar el sampler, Spotify u otra app se pausan y continúan al terminar
+  // Instalador de actualizaciones: descarga el APK y abre el instalador de Android
+  fs.writeFileSync(path.join(path.dirname(act), 'InstaladorPlugin.java'), paquete + `
+
+import android.content.Intent;
+import android.net.Uri;
+import android.os.Build;
+import android.provider.Settings;
+import androidx.core.content.FileProvider;
+import com.getcapacitor.JSObject;
+import com.getcapacitor.Plugin;
+import com.getcapacitor.PluginCall;
+import com.getcapacitor.PluginMethod;
+import com.getcapacitor.annotation.CapacitorPlugin;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+
+@CapacitorPlugin(name = "Instalador")
+public class InstaladorPlugin extends Plugin {
+    @PluginMethod
+    public void instalar(PluginCall call) {
+        String url = call.getString("url");
+        if (url == null) { call.reject("sin url"); return; }
+        if (Build.VERSION.SDK_INT >= 26 && !getContext().getPackageManager().canRequestPackageInstalls()) {
+            Intent ajustes = new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:" + getContext().getPackageName()));
+            ajustes.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            getContext().startActivity(ajustes);
+            JSObject r = new JSObject(); r.put("permiso", false); call.resolve(r); return;
+        }
+        new Thread(() -> {
+            try {
+                File apk = new File(getContext().getCacheDir(), "GestFeria-actualizacion.apk");
+                HttpURLConnection c = (HttpURLConnection) new URL(url).openConnection();
+                c.setInstanceFollowRedirects(true);
+                for (int i = 0; i < 5; i++) { int code = c.getResponseCode(); if (code / 100 != 3) break; c = (HttpURLConnection) new URL(c.getHeaderField("Location")).openConnection(); }
+                try (InputStream in = c.getInputStream(); FileOutputStream out = new FileOutputStream(apk)) { byte[] b = new byte[65536]; int n; while ((n = in.read(b)) > 0) out.write(b, 0, n); }
+                Uri uri = FileProvider.getUriForFile(getContext(), getContext().getPackageName() + ".fileprovider", apk);
+                Intent i = new Intent(Intent.ACTION_VIEW);
+                i.setDataAndType(uri, "application/vnd.android.package-archive");
+                i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
+                getContext().startActivity(i);
+                JSObject r = new JSObject(); r.put("permiso", true); call.resolve(r);
+            } catch (Exception e) { call.reject("descarga: " + e.getMessage()); }
+        }).start();
+    }
+}
+`);
   fs.writeFileSync(path.join(path.dirname(act), 'AudioFocoPlugin.java'), paquete + `
 
 import android.content.Context;
