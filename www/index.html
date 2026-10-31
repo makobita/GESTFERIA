@@ -1492,6 +1492,7 @@ select.inp{ padding-right:18px; }
 .user-pill .ico{ width:18px; height:18px; }
 #primerAdmin{ z-index:425; }
 /* Sampler sin efectos en movimiento */
+:root.sampler-quieto .ap-dinamico{ display:none; }
 :root.sampler-quieto #s-sampler .spad, :root.sampler-quieto #s-sampler .spad *, :root.sampler-quieto #s-sampler .spad::before, :root.sampler-quieto #s-sampler .spad::after, :root.sampler-quieto #s-sampler .smp-fondo, :root.sampler-quieto #s-sampler::before, :root.sampler-quieto #s-sampler::after{ animation:none !important; }
 .c-acciones{ display:flex; flex-wrap:nowrap; gap:10px; margin-top:12px; }
 .c-acciones > button{ flex:1 1 0; min-width:0; margin:0; white-space:nowrap; padding-left:12px; padding-right:12px; }
@@ -3117,12 +3118,14 @@ body.sin-eco #infEnviar, body.sin-eco #frEnviar, body.sin-eco #anioEnviar{ displ
     <div class="ap-cols" id="apColores"></div>
     <span class="c-lbl">Colores neón</span>
     <div class="ap-cols" id="apNeon"></div>
+    <div class="ap-dinamico">
     <span class="c-lbl">Pulsos</span>
     <div class="ap-cols" id="apPulsos"></div>
     <span class="c-lbl">Efectos de luz</span>
     <div class="ap-cols ap-efx" id="apEfectos"></div>
     <span class="c-lbl">Marcos arcoíris</span>
     <div class="ap-cols ap-efx" id="apMarcos"></div>
+    </div>
     <div class="m-actions"><button class="btn-secondary" id="apCancelar">Cancelar</button><button class="btn-primary" id="apGuardar">Guardar</button></div>
   </div>
 </div>
@@ -3448,7 +3451,7 @@ body.sin-eco #infEnviar, body.sin-eco #frEnviar, body.sin-eco #anioEnviar{ displ
   <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="acTit">
     <h3 id="acTit">Acerca de GestFeria</h3>
     <p>Taquilla y gestión para atracciones de feria: venta de tickets, cierres, informes, usuarios, sampler y música.</p>
-    <p><b>Versión:</b> <span id="acVer">0.6.24</span></p>
+    <p><b>Versión:</b> <span id="acVer">0.6.25</span></p>
     <p class="tk-emp-nota">© 2026 GestFeria · Todos los derechos reservados</p>
     <div class="m-actions"><button class="btn-primary" id="acCerrar">Cerrar</button></div>
   </div>
@@ -7089,7 +7092,8 @@ const mismoNombre = (a, b) => normNombre(a) === normNombre(b);
   function padHTML(pad, pg, i, k){
     const dk = k ? ` data-k="${k}"` : '';
     if(!pad) return `<button class="spad vacio" data-pg="${pg}" data-i="${i}"${dk} aria-label="Botón vacío"><span class="sp-ic"><svg class="ico"><use href="#i-plus"/></svg></span><span class="sp-nm">Vacío</span></button>`;
-    const [tipo, val] = String(pad.color || 'c:#3B82F6').split(':');
+    let [tipo, val] = String(pad.color || 'c:#3B82F6').split(':');
+    if(store.get('kiosk-sampler-dinamico', true) === false && (tipo === 'fx' || tipo === 'p')){ tipo = 'c'; val = '#3B82F6'; } // sin botones dinámicos: color por defecto
     let cls = 'spad', st = '';
     if(tipo === 'fx') cls += ' pfx-' + val; else { st = '--pc:' + val + ';'; if(tipo === 'n') cls += ' neon'; if(tipo === 'p') cls += ' neon pulso'; }
     const f = pad.fondo && fondos.get(pad.fondo);
@@ -9390,7 +9394,7 @@ const mismoNombre = (a, b) => normNombre(a) === normNombre(b);
   });
   // Botones dinámicos del sampler (parpadeo, RGB y fondo en movimiento)
   const pintarDinamico = () => { const on = store.get('kiosk-sampler-dinamico', true) !== false; $('#audDinamico').setAttribute('aria-checked', on); document.documentElement.classList.toggle('sampler-quieto', !on); };
-  $('#audDinamico').addEventListener('click', () => { store.set('kiosk-sampler-dinamico', store.get('kiosk-sampler-dinamico', true) === false); pintarDinamico(); });
+  $('#audDinamico').addEventListener('click', () => { store.set('kiosk-sampler-dinamico', store.get('kiosk-sampler-dinamico', true) === false); pintarDinamico(); try{ renderSampler(); } catch(_){} });
   pintarDinamico();
   // Contacto y Acerca de
   $('#cfgContacto').addEventListener('click', () => { $('#contactoModal').hidden = false; });
