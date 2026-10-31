@@ -1,0 +1,66 @@
+name: Compilar APK
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [ main, master ]
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Instalar dependencias
+        run: npm install
+
+      - name: Crear el proyecto Android
+        run: |
+          npx cap add android
+          node scripts/permisos-android.js
+          node scripts/icono-android.js
+          node scripts/firma-android.js
+          npx cap sync android
+
+      - name: Compilar el APK
+        run: |
+          # Firma siempre con la misma clave, para poder instalar las actualizaciones encima
+          mkdir -p ~/.android
+          cp recursos/debug.keystore ~/.android/debug.keystore
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Nombrar el APK
+        run: cp android/app/build/outputs/apk/debug/app-debug.apk GestFeria.apk
+      - name: Guardar el APK para descargar
+        uses: actions/upload-artifact@v4
+        with:
+          name: GestFeria-apk
+          path: GestFeria.apk
+
+      # Publica el APK como versión (Release) para que la app pueda buscar actualizaciones
+      - name: Preparar la versión
+        run: |
+          V=$(tr -d ' \r\n' < version.txt)
+          echo "VERSION=$V" >> $GITHUB_ENV
+          cp android/app/build/outputs/apk/debug/app-debug.apk GestFeria-$V.apk
+      - name: Publicar la versión
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ env.VERSION }}
+          name: GestFeria ${{ env.VERSION }}
+          files: GestFeria-${{ env.VERSION }}.apk
+          make_latest: true
