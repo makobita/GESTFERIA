@@ -1,0 +1,8 @@
+{
+  "appId": "es.feria.ventatickets",
+  "appName": "GestFeria",
+  "webDir": "www",
+  "android": {
+    "allowMixedContent": false
+  }
+}
