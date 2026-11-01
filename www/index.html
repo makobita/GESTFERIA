@@ -3470,7 +3470,7 @@ body.sin-eco #infEnviar, body.sin-eco #frEnviar, body.sin-eco #anioEnviar{ displ
   <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="acTit">
     <h3 id="acTit">Acerca de GestFeria</h3>
     <p>Taquilla y gestión para atracciones de feria: venta de tickets, cierres, informes, usuarios, sampler y música.</p>
-    <p><b>Versión:</b> <span id="acVer">0.6.29</span></p>
+    <p><b>Versión:</b> <span id="acVer">0.6.31</span></p>
     <p class="tk-emp-nota">© 2026 GestFeria · Todos los derechos reservados</p>
     <div class="m-actions"><button class="btn-primary" id="acCerrar">Cerrar</button></div>
   </div>
@@ -3754,7 +3754,7 @@ const mismoNombre = (a, b) => normNombre(a) === normNombre(b);
     // Temas fijos: "solo claro" o "solo oscuro" ignoran el modo del dispositivo
     if(t.soloClaro) root.setAttribute('data-theme', 'light');
     else if(t.soloOscuro) root.setAttribute('data-theme', 'dark');
-    else root.removeAttribute('data-theme');
+    else root.setAttribute('data-theme', esOscuro() ? 'dark' : 'light'); // sigue al claro u oscuro elegido (o al de la tablet)
     const oscuro = t.soloOscuro || (!t.soloClaro && esOscuro());
     const v = oscuro ? (t.dark || t.light) : (t.light || t.dark);
     TOKENS.forEach((k, i) => root.style.setProperty('--' + k, v[i] !== undefined ? v[i] : v[6]));
@@ -9090,7 +9090,11 @@ const mismoNombre = (a, b) => normNombre(a) === normNombre(b);
   });
   $('#uSesRow').addEventListener('click', () => { if(!esAdmin()){ sinPermiso('cambiar esto'); return; } abrirSesCfg(false); });
   // Al salir de la app se apunta la hora; al volver, se pide la contraseña si toca
-  const marcarSalida = () => { const s = store.get('kiosk-sesion', null); if(s && sesionId){ s.salida = Date.now(); store.set('kiosk-sesion', s); } };
+  // Al elegir un archivo (sonido, canción, foto, logo) la app pasa a segundo plano: eso no cuenta como salir
+  let eligiendoArchivo = 0;
+  document.addEventListener('click', e => { if(e.target.closest && e.target.closest('input[type="file"]')) eligiendoArchivo = Date.now(); }, true);
+  const marcarSalida = () => { if(Date.now() - eligiendoArchivo < 10 * 60e3) return; const s = store.get('kiosk-sesion', null); if(s && sesionId){ s.salida = Date.now(); store.set('kiosk-sesion', s); } };
+  window.addEventListener('focus', () => { if(eligiendoArchivo && !document.hidden) setTimeout(() => { eligiendoArchivo = 0; }, 1500); });
   document.addEventListener('visibilitychange', () => {
     if(document.hidden){ marcarSalida(); return; }
     const s = store.get('kiosk-sesion', null);
