@@ -50,7 +50,7 @@ if (act) {
   let j = fs.readFileSync(act, 'utf8');
   const paquete = (j.match(/^package\s+[^;]+;/m) || [''])[0];
   // Actividad: pantalla siempre encendida y complemento de foco de audio
-  j = paquete + '\n\nimport android.os.Bundle;\nimport android.view.WindowManager;\nimport com.getcapacitor.BridgeActivity;\n\n' +
+  j = paquete + '\n\nimport android.os.Bundle;\nimport android.view.WindowManager;\nimport androidx.core.view.WindowCompat;\nimport androidx.core.view.WindowInsetsCompat;\nimport androidx.core.view.WindowInsetsControllerCompat;\nimport com.getcapacitor.BridgeActivity;\n\n' +
     'public class MainActivity extends BridgeActivity {\n' +
     '    @Override\n' +
     '    public void onCreate(Bundle savedInstanceState) {\n' +
@@ -58,6 +58,19 @@ if (act) {
     '        registerPlugin(InstaladorPlugin.class);\n' +
     '        super.onCreate(savedInstanceState);\n' +
     '        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);\n' +
+    '        pantallaCompleta();\n' +
+    '    }\n' +
+    '    // Pantalla completa: oculta la barra de arriba y la de navegación (se ven deslizando desde el borde)\n' +
+    '    private void pantallaCompleta() {\n' +
+    '        WindowCompat.setDecorFitsSystemWindows(getWindow(), false);\n' +
+    '        WindowInsetsControllerCompat c = WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());\n' +
+    '        c.hide(WindowInsetsCompat.Type.systemBars());\n' +
+    '        c.setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);\n' +
+    '    }\n' +
+    '    @Override\n' +
+    '    public void onWindowFocusChanged(boolean hasFocus) {\n' +
+    '        super.onWindowFocusChanged(hasFocus);\n' +
+    '        if (hasFocus) pantallaCompleta();\n' +
     '    }\n' +
     '}\n';
   fs.writeFileSync(act, j);
