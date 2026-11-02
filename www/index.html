@@ -3473,7 +3473,7 @@ body.sin-eco #infEnviar, body.sin-eco #frEnviar, body.sin-eco #anioEnviar{ displ
   <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="acTit">
     <h3 id="acTit">Acerca de GestFeria</h3>
     <p>Taquilla y gestión para atracciones de feria: venta de tickets, cierres, informes, usuarios, sampler y música.</p>
-    <p><b>Versión:</b> <span id="acVer">0.6.35</span></p>
+    <p><b>Versión:</b> <span id="acVer">0.6.36</span></p>
     <p class="tk-emp-nota">© 2026 GestFeria · Todos los derechos reservados</p>
     <div class="m-actions"><button class="btn-primary" id="acCerrar">Cerrar</button></div>
   </div>
@@ -3564,6 +3564,7 @@ const I18N_RE = { en: [[/^Bono (\d+)$/, 'Bundle $1'], [/^(\d+) tickets$/, '$1 ti
   pt: [['Cargando ','A carregar '],['Ya tienes la última versión','Já tens a versão mais recente'],['Hay una versión nueva: ','Há uma nova versão: '],['Escribe el correo con el que registraste a ','Escreve o e-mail com que registaste '],['Contraseña incorrecta (','Palavra-passe incorreta ('],['Te hemos enviado un código a ','Enviámos um código para '],[/^Bono (\d+)$/, 'Pacote $1'], [/^(\d+) tickets$/, '$1 bilhetes'], [/^1 ticket$/, '1 bilhete'], [/^Precio fijo: (.+) por ticket$/, 'Preço fixo: $1 por bilhete'], [/^En gestión: (\d+) atracci[oó]n(es)?$/, 'A gerir: $1 atração(ões)']] };
 const I18N_PRE = { en: [['0 cargados','0 loaded'],['Cargando ','Loading '],['Ya tienes la última versión','You have the latest version'],['Hay una versión nueva: ','A new version is available: '],['Escribe el correo con el que registraste a ','Enter the email you registered for '],['Contraseña incorrecta (','Wrong password ('],['Te hemos enviado un código a ','We sent a code to '],["Informe del día: ", "Day report: "], ["Informe de feria: ", "Fair report: "], ["Informe del año ", "Year report "], ["Apertura: ", "Opening: "], ["Gasto: ", "Expense: "], ["Entrada extra: ", "Extra income: "], ["GestFeria · Informe del año ", "GestFeria · Year report "], ["GestFeria · Informe del ", "GestFeria · Report of "], ["Tiempo sin contraseña: ", "Time without password: "], ["Saltado: ", "Skipped: "], ["Guardado como sonido nuevo: página ", "Saved as new sound: page "], ["No se pudo abrir la lista: ", "Could not open playlist: "], ["Documento creado: ", "Document created: "], ["Gasto de gestión añadido: ", "Management expense added: "], ["Se pedirá la contraseña: ", "Password will be asked: "], ["Tema ", "Theme "], ["Tamaño ", "Size "], ["Total ", "Total "],['Venta confirmada · ','Sale confirmed · '],['Conectado a ','Connected to '],['No se pudo conectar con ','Could not connect to '],['Feria actual: ','Current fair: '],['Hola, ','Hello, '],['No tienes permiso para ','You are not allowed to '],['Venta borrada: ','Sale deleted: '],['Demasiados intentos. Espera ','Too many attempts. Wait '],['Sonido añadido: ','Sound added: '],['Hora de cierre guardada: ','Closing time saved: ']],
   pt: [["Informe del día: ", "Relatório do dia: "], ["Informe de feria: ", "Relatório da feira: "], ["Informe del año ", "Relatório do ano "], ["Apertura: ", "Abertura: "], ["Gasto: ", "Despesa: "], ["Entrada extra: ", "Entrada extra: "], ["GestFeria · Informe del año ", "GestFeria · Relatório do ano "], ["GestFeria · Informe del ", "GestFeria · Relatório de "], ["Tiempo sin contraseña: ", "Tempo sem palavra-passe: "], ["Saltado: ", "Saltado: "], ["Guardado como sonido nuevo: página ", "Guardado como som novo: página "], ["No se pudo abrir la lista: ", "Não foi possível abrir a lista: "], ["Documento creado: ", "Documento criado: "], ["Gasto de gestión añadido: ", "Despesa de gestão adicionada: "], ["Se pedirá la contraseña: ", "Será pedida a palavra-passe: "], ["Tema ", "Tema "], ["Tamaño ", "Tamanho "], ["Total ", "Total "],['Venta confirmada · ','Venda confirmada · '],['Conectado a ','Ligado a '],['No se pudo conectar con ','Não foi possível ligar a '],['Feria actual: ','Feira atual: '],['Hola, ','Olá, '],['No tienes permiso para ','Não tens permissão para '],['Venta borrada: ','Venda apagada: '],['Demasiados intentos. Espera ','Demasiadas tentativas. Espera '],['Sonido añadido: ','Som adicionado: '],['Hora de cierre guardada: ','Hora de fecho guardada: ']] };
+const traducirTxt = t => tr(t); // alias para usar donde hay otra variable llamada «tr»
 function tr(t){
   if(IDIOMA === 'es' || !t) return t;
   for(const [a, b] of I18N_PRE[IDIOMA]) if(t.trim().startsWith(a)){ const r = t.replace(a, b); return r; }
@@ -8616,7 +8617,7 @@ const mismoNombre = (a, b) => normNombre(a) === normNombre(b);
 
   // --- Documento Word (.docx) hecho en la propia app ---
   const xmlEsc = t => String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-  function wRun(t, o = {}){ return `<w:r><w:rPr>${o.b ? '<w:b/>' : ''}${o.color ? `<w:color w:val="${o.color}"/>` : ''}${o.sz ? `<w:sz w:val="${o.sz}"/>` : ''}</w:rPr><w:t xml:space="preserve">${xmlEsc(tr(String(t)))}</w:t></w:r>`; }
+  function wRun(t, o = {}){ return `<w:r><w:rPr>${o.b ? '<w:b/>' : ''}${o.color ? `<w:color w:val="${o.color}"/>` : ''}${o.sz ? `<w:sz w:val="${o.sz}"/>` : ''}</w:rPr><w:t xml:space="preserve">${xmlEsc(traducirTxt(String(t)))}</w:t></w:r>`; }
   function wPar(t, o = {}){ return `<w:p><w:pPr>${o.jc ? `<w:jc w:val="${o.jc}"/>` : ''}<w:spacing w:before="${o.antes || 0}" w:after="${o.despues == null ? 120 : o.despues}"/></w:pPr>${wRun(t, o)}</w:p>`; }
   function wTabla(filas, o = {}){
     const n = Math.max(...filas.map(f => f.length)), der = o.der || [];
@@ -8719,9 +8720,10 @@ const mismoNombre = (a, b) => normNombre(a) === normNombre(b);
   // Enviar: en la app se abre el menú de Android para mandarlo por correo; en el navegador se comparte o se descarga
   const blobB64 = b => new Promise((ok, ko) => { const r = new FileReader(); r.onload = () => ok(String(r.result).split(',')[1]); r.onerror = ko; r.readAsDataURL(b); });
   async function enviarDoc(d){
-    const blob = crearDocx(d.cuerpo), texto = 'Te envío el informe de GestFeria en un documento de Word adjunto.';
+    const texto = 'Te envío el informe de GestFeria en un documento de Word adjunto.';
     const C = window.Capacitor, P = C && C.Plugins;
     try{
+      const blob = crearDocx(d.cuerpo);
       if(esApp() && C){
         // los complementos se piden por su nombre por si no están ya cargados
         const FS = (P && P.Filesystem) || (C.registerPlugin && C.registerPlugin('Filesystem'));
