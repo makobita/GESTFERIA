@@ -99,7 +99,15 @@ public class InstaladorPlugin extends Plugin {
                 HttpURLConnection c = (HttpURLConnection) new URL(url).openConnection();
                 c.setInstanceFollowRedirects(true);
                 for (int i = 0; i < 5; i++) { int code = c.getResponseCode(); if (code / 100 != 3) break; c = (HttpURLConnection) new URL(c.getHeaderField("Location")).openConnection(); }
-                try (InputStream in = c.getInputStream(); FileOutputStream out = new FileOutputStream(apk)) { byte[] b = new byte[65536]; int n; while ((n = in.read(b)) > 0) out.write(b, 0, n); }
+                long total = c.getContentLengthLong(), hecho = 0; int ultimo = -1;
+                try (InputStream in = c.getInputStream(); FileOutputStream out = new FileOutputStream(apk)) {
+                    byte[] b = new byte[65536]; int n;
+                    while ((n = in.read(b)) > 0) {
+                        out.write(b, 0, n); hecho += n;
+                        int pct = total > 0 ? (int) (hecho * 100 / total) : -1;
+                        if (pct != ultimo) { ultimo = pct; JSObject pr = new JSObject(); pr.put("pct", pct); pr.put("bytes", hecho); notifyListeners("progreso", pr); }
+                    }
+                }
                 Uri uri = FileProvider.getUriForFile(getContext(), getContext().getPackageName() + ".fileprovider", apk);
                 Intent i = new Intent(Intent.ACTION_VIEW);
                 i.setDataAndType(uri, "application/vnd.android.package-archive");
