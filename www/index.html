@@ -583,7 +583,10 @@ select.inp{ padding-right:18px; }
 .c-stats > .c-hint{ grid-column:1 / -1; background:none; padding:2px 4px 0; text-align:center; color:var(--accent-text, var(--accent)); font-weight:600; font-size:14px; }
 
 /* ---------- Configurar ticket ---------- */
-.tk-grid{ display:grid; grid-template-columns:minmax(0,1fr) 300px; gap:20px; align-items:start; }
+.tk-grid{ display:grid; grid-template-columns:minmax(0,1fr) auto; gap:20px; align-items:start; }
+.tk-grid > .tk-col:last-child{ min-width:300px; }
+#s-ticket .wrap{ max-width:min(1180px, 100%); }
+.tk-grid > .tk-col:first-child{ min-width:min(440px, 100%); }
 .tk-col{ display:flex; flex-direction:column; gap:14px; }
 .tk-probar{ align-self:flex-start; display:inline-flex; align-items:center; gap:10px; }
 .tk-probar .ico{ width:22px; height:22px; }
@@ -616,10 +619,15 @@ select.inp{ padding-right:18px; }
 .tk-grid > .tk-col:last-child{ position:sticky; top:0; max-height:calc(100vh - 120px); overflow-y:auto; overscroll-behavior:contain; padding-bottom:12px; }
 .tk-atr-fila{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
 #tkTodos[hidden]{ display:none; }
+/* El ticket tiene siempre el ancho de su papel: un texto grande pasa a dos líneas centradas sin cambiar el ticket ni los demás textos */
+#tkPrev.tk-paper{ width:300px; max-width:none; box-sizing:border-box; flex:none; }
+#tkPrev.tk-paper.p80{ width:430px; }
+#tkPrev [data-id]{ max-width:100%; white-space:normal; overflow-wrap:anywhere; text-align:center; box-sizing:border-box; }
 .tk-grid.tk-editando{ grid-template-columns:1fr !important; }
 .tk-grid.tk-editando > .tk-col:first-child{ display:none; }
-.tk-grid.tk-editando > .tk-col:last-child{ position:static; max-height:none; overflow:visible; }
-.tk-grid.tk-editando .tk-paper{ margin:0 auto; }
+.tk-grid.tk-editando > .tk-col:last-child{ position:static; max-height:none; overflow:visible; display:grid; grid-template-columns:minmax(300px, 1fr) auto; column-gap:40px; row-gap:14px; align-content:start; align-items:start; }
+.tk-grid.tk-editando > .tk-col:last-child > *{ grid-column:1; }
+.tk-grid.tk-editando > .tk-col:last-child > #tkPrev{ grid-column:2; grid-row:1 / span 20; margin:0; }
 .marcos{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; padding:2px 16px 14px; }
 .marcos[hidden]{ display:none; }
 .marco-en{ display:flex; flex-direction:column; align-items:flex-start; gap:8px; padding:0 16px 12px; }
@@ -3488,7 +3496,7 @@ body.sin-eco #infEnviar, body.sin-eco #frEnviar, body.sin-eco #anioEnviar{ displ
   <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="acTit">
     <h3 id="acTit">Acerca de GestFeria</h3>
     <p>Taquilla y gestión para atracciones de feria: venta de tickets, cierres, informes, usuarios, sampler y música.</p>
-    <p><b>Versión:</b> <span id="acVer">0.6.42</span></p>
+    <p><b>Versión:</b> <span id="acVer">0.6.45</span></p>
     <p class="tk-emp-nota">© 2026 GestFeria · Todos los derechos reservados</p>
     <div class="m-actions"><button class="btn-primary" id="acCerrar">Cerrar</button></div>
   </div>
@@ -4280,6 +4288,7 @@ const mismoNombre = (a, b) => normNombre(a) === normNombre(b);
     $('#tkLogoQuitar').hidden = !logo;
     document.querySelector('[data-tk="logo"]').disabled = !logo;
     $('#tkVerNino').setAttribute('aria-checked', verNinoPrev);
+    $('#tkPrev').classList.toggle('p80', Number(tkCfg.papel) === 80); // ancho fijo según el papel
     $$('#tkPrevTipo [data-pv]').forEach(b => { const on = (b.dataset.pv === '1') === !!verNinoPrev; b.setAttribute('aria-selected', on); b.setAttribute('aria-checked', on); });
     $('#tkNinoFraseBox').hidden = !verNinoPrev;
     if(document.activeElement !== $('#tkNinoFrase')) $('#tkNinoFrase').value = tkCfg.ninoFrase == null ? 'Válido solo el día de su venta' : tkCfg.ninoFrase;
