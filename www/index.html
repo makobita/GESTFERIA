@@ -1505,6 +1505,17 @@ select.inp{ padding-right:18px; }
 .user-pill[hidden]{ display:none; }
 .user-pill .ico{ width:18px; height:18px; }
 #primerAdmin{ z-index:425; }
+#cierreModal .c-total{ display:none !important; }
+#cTotales .c-fact{ background:var(--accent-soft); } #cTotales .c-fact span{ color:var(--accent); font-weight:700; } #cTotales .c-fact b{ color:var(--accent); }
+#cierreModal .modal-card{ max-height:calc(100vh - 24px); padding-top:18px; padding-bottom:16px; }
+#cierreModal .modal-card > *{ margin-top:0; margin-bottom:0; }
+#cierreModal .modal-card{ display:flex; flex-direction:column; gap:10px; }
+#cierreModal #cNotas{ min-height:0; height:64px; }
+#cierreModal .wx-btn{ padding-top:6px; padding-bottom:6px; }
+#cierreModal .mov-btn{ min-height:46px; height:46px; }
+#cierreModal h3{ font-size:22px; }
+#arranque{ position:fixed; inset:0; z-index:75; background:var(--bg); }
+#smpAsk{ z-index:470 !important; }
 .sc-borrar{ color:var(--danger); }
 #smpApar.ap-pagina :is(.ap-cab, #apIconos, .ap-foto, .ap-solo-boton){ display:none; }
 #loginDots{ min-height:22px; }
@@ -1769,6 +1780,7 @@ body.sin-eco #infEnviar, body.sin-eco #frEnviar, body.sin-eco #anioEnviar{ displ
 </style>
 </head>
 <body>
+<div id="arranque"></div><!-- tapa la app desde el primer instante hasta saber si hay que registrarse o entrar -->
 <div class="app">
   <div class="infobar" id="infoBar" hidden>
     <strong class="ib-name" id="ibName"></strong>
@@ -3496,7 +3508,7 @@ body.sin-eco #infEnviar, body.sin-eco #frEnviar, body.sin-eco #anioEnviar{ displ
   <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="acTit">
     <h3 id="acTit">Acerca de GestFeria</h3>
     <p>Taquilla y gestión para atracciones de feria: venta de tickets, cierres, informes, usuarios, sampler y música.</p>
-    <p><b>Versión:</b> <span id="acVer">0.6.45</span></p>
+    <p><b>Versión:</b> <span id="acVer">0.6.50</span></p>
     <p class="tk-emp-nota">© 2026 GestFeria · Todos los derechos reservados</p>
     <div class="m-actions"><button class="btn-primary" id="acCerrar">Cerrar</button></div>
   </div>
@@ -5677,7 +5689,7 @@ const mismoNombre = (a, b) => normNombre(a) === normNombre(b);
     const tt = totalesResumen(r);
     $('#cTotales').innerHTML =
       `<div><span>Tickets vendidos</span><b>${tt.tickets}</b></div>` +
-      `<div><span>Bonos vendidos</span><b>${tt.bonos}</b></div>` + HINT_DESGLOSE;
+      `<div class="c-fact"><span>Total facturado · ver desglose ›</span><b>${eur(r.total)}</b></div>`;
     pintarTabsAtr('#cAtrTabs', cierreAtr);
     pintarPrivCierre();
   }
@@ -5707,7 +5719,7 @@ const mismoNombre = (a, b) => normNombre(a) === normNombre(b);
     const ver = desbloqueado() && puede('verCierre');
     $('#cVer').hidden = !puede('verCierre');
     $('#cTotales').style.display = ver ? '' : 'none';
-    document.querySelector('#cierreModal .c-total').style.display = ver ? '' : 'none';
+    document.querySelector('#cierreModal .c-total').style.display = 'none'; // el total va junto a los tickets
     $('#cPriv').hidden = ver;
     pintarMovs('c');
   }
@@ -5817,8 +5829,10 @@ const mismoNombre = (a, b) => normNombre(a) === normNombre(b);
     if(r.ninos) filas.push(['Tickets día del niño' + precioDe('nino', cfg.nino.precio), r.ninos]);
     Object.keys(r.bonosNino).map(Number).sort((a,b) => a - b).forEach(t => filas.push(['Bonos de ' + t + ' tickets (día del niño)' + precioDe('bn' + t, fbBonoNino(t)), r.bonosNino[t]]));
     if(r.n2e) filas.push(['Día del niño 2x1 (entregados / cobrados)', r.n2e + ' / ' + r.n2c]);
+    // Día del niño: solo lo que se vendió de verdad (los precios normales sin ventas no se muestran)
+    const lista = esDiaNino(r) ? filas.filter(([, v]) => v !== 0 && v !== '0') : filas;
     // Las invitaciones no se contabilizan en ningún informe ni resumen
-    return filas.map(([a,b]) => `<div class="c-row"><span>${a}</span><b>${b}</b></div>`).join('')
+    return lista.map(([a,b]) => `<div class="c-row"><span>${a}</span><b>${b}</b></div>`).join('')
       + `<div class="c-row sub"><span>Ventas realizadas</span><b>${r.ventas}</b></div>`;
   }
   const fechaCorta = d => d.toLocaleDateString(LOCALE, { day:'2-digit', month:'2-digit', year:'numeric' });
@@ -6413,9 +6427,18 @@ const mismoNombre = (a, b) => normNombre(a) === normNombre(b);
   /* Bienvenida: solo la primera vez que se abre la app, para elegir el modo */
   const APP_NOMBRE = 'GestFeria'; // nombre de la aplicación
   let bvEleccion = null;
-  if(!store.get('kiosk-bienvenida', false)){
-    $('#bvNombre').textContent = APP_NOMBRE;
-    $('#bienvenida').hidden = false;
+  const appNueva = !store.get('kiosk-bienvenida', false);
+  const quitarTapa = () => { if(store.get('kiosk-bienvenida', false)) $('#arranque').hidden = true; };
+  window.quitarTapa = quitarTapa;
+  $('#bvNombre').textContent = APP_NOMBRE;
+  if(appNueva){
+    $('#arranque').hidden = false; // la app no se ve hasta terminar el registro, el tipo de app y el tema
+    const hayU = (store.get('kiosk-usuarios', []) || []).length > 0 || ((store.get('kiosk-sesion', null) || {}).id === '__dev__');
+    if(hayU) $('#bienvenida').hidden = false; else store.set('kiosk-pide-admin', true);
+  }
+  function terminarArranque(){
+    $('#arranque').hidden = true;
+    if(!store.get('kiosk-tutorial-visto', false)) setTimeout(() => { try{ tutorialInicio(); } catch(_){} }, 400);
   }
   $$('.bv-card').forEach(c => c.addEventListener('click', () => {
     bvEleccion = c.dataset.bv;
@@ -6427,11 +6450,11 @@ const mismoNombre = (a, b) => normNombre(a) === normNombre(b);
     elegirModo(bvEleccion);
     store.set('kiosk-bienvenida', true);
     $('#bienvenida').hidden = true;
-    store.set('kiosk-pide-admin', true);
     setTimeout(async () => {
       const r = await preguntar('¿Tema claro u oscuro?', 'Elige cómo quieres el fondo de la aplicación. Puedes cambiarlo cuando quieras en Personalización → Temas.', [{ k:'claro', t:'Claro' }, { k:'oscuro', t:'Oscuro', cls:'btn-primary' }]);
       try{ window.ponerFondo(r === 'oscuro' ? 'oscuro' : 'claro'); } catch(_){ store.set('kiosk-oscuro', r === 'oscuro' ? 'oscuro' : 'claro'); }
-      try{ pedirPrimerAdmin(); } catch(_){}
+      if(!hayUsuarios() && !esDev()){ store.set('kiosk-pide-admin', true); try{ pedirPrimerAdmin(); } catch(_){} }
+      else terminarArranque();
     }, 300);
     toast(bvEleccion === 'tpv' ? 'Modo TPV activado' : bvEleccion === 'audio' ? 'Modo TPV + gestor de cuentas + audio activado' : 'Modo TPV + gestor de cuentas activado', 'ok');
   });
@@ -9170,7 +9193,7 @@ const mismoNombre = (a, b) => normNombre(a) === normNombre(b);
     if(fl[u.id]){ delete fl[u.id]; store.set('kiosk-login-fallos', fl); }
     sesionId = u.id; store.set('kiosk-ultimo-usuario', u.id);
     store.set('kiosk-sesion', { id: u.id, dia: isoDia(new Date()), salida: null });
-    $('#login').hidden = true; go('home'); aplicarPermisos(); renderHome();
+    $('#login').hidden = true; quitarTapa(); go('home'); aplicarPermisos(); renderHome();
     toast('Hola, ' + u.nombre, 'ok');
   }
   $('#loginPad').addEventListener('click', e => {
@@ -9213,7 +9236,7 @@ const mismoNombre = (a, b) => normNombre(a) === normNombre(b);
   $('#sesHoras').addEventListener('click', e => { const b = e.target.closest('[data-sh]'); if(!b) return; sesCfg.horas = Number(b.dataset.sh); pintarSesCfg(); });
   $('#sesOk').addEventListener('click', () => {
     store.set('kiosk-sesion-cfg', sesCfg); $('#sesCfg').hidden = true; pintarSesCfg();
-    if($('#sesCfg').dataset.primera){ store.set('kiosk-pide-sesion', false); if(!store.get('kiosk-tutorial-visto', false)) setTimeout(() => { try{ tutorialInicio(); } catch(_){} }, 400); }
+    if($('#sesCfg').dataset.primera){ store.set('kiosk-pide-sesion', false); if(!store.get('kiosk-bienvenida', false)) $('#bienvenida').hidden = false; else if(!store.get('kiosk-tutorial-visto', false)) setTimeout(() => { try{ tutorialInicio(); } catch(_){} }, 400); }
     else toast('Se pedirá la contraseña: ' + TXT_SES().toLowerCase(), 'ok');
   });
   $('#uSesRow').addEventListener('click', () => { if(!esAdmin()){ sinPermiso('cambiar esto'); return; } abrirSesCfg(false); });
@@ -9299,7 +9322,8 @@ const mismoNombre = (a, b) => normNombre(a) === normNombre(b);
   $('#dlOk').addEventListener('click', async () => {
     if(!mismoNombre($('#dlNom').value, 'bacarizo') || (await hashPin($('#dlPin').value, DEV_SAL)) !== SUPER_HASH){ $('#dlErr').textContent = 'Usuario o contraseña incorrectos'; $('#dlPin').value = ''; return; }
     sesionId = DEV_ID; store.set('kiosk-sesion', { id: DEV_ID, dia: isoDia(new Date()), salida: null });
-    $('#devLogin').hidden = true; $('#login').hidden = true; $('#primerAdmin').hidden = true; $('#activar').hidden = true;
+    $('#devLogin').hidden = true; $('#login').hidden = true; $('#primerAdmin').hidden = true; $('#activar').hidden = true; quitarTapa();
+    if(!store.get('kiosk-bienvenida', false)) $('#bienvenida').hidden = false;
     aplicarPermisos(); renderHome(); pintarEmpleados();
     toast('Modo desarrollador: todos los permisos', 'ok');
   });
@@ -9495,6 +9519,7 @@ const mismoNombre = (a, b) => normNombre(a) === normNombre(b);
       if(store.get('kiosk-pide-sesion', false)) abrirSesCfg(true);
     }
   }
+  if($('#login').hidden && $('#primerAdmin').hidden && $('#bienvenida').hidden) quitarTapa();
 
   /* ===== Copia de seguridad: carpeta «Copias de seguridad» en Documentos de la tablet ===== */
   $('#cfgCopia').addEventListener('click', () => { $('#cpRes').textContent = ''; $('#copiaModal').hidden = false; });
@@ -9594,6 +9619,20 @@ const mismoNombre = (a, b) => normNombre(a) === normNombre(b);
   // Orden final del menú de Configuración (de arriba abajo): …, Idioma, Buscar actualización, Tutoriales, Probar impresora, Desarrollador, Contacta, Acerca de
   (() => { const dev = document.getElementById('cfgDev'), menu = dev && dev.parentElement; if(!menu) return;
     ['#cfgIdioma', '#cfgActualizar', '.menu-row[data-go="tutoriales"]', '#cfgProbar', '#cfgDev', '#cfgContacto', '#cfgAcerca'].forEach(sel => { const el = menu.querySelector(sel); if(el) menu.appendChild(el); }); })();
+  // Tecla Intro del teclado de Android: pasa al siguiente campo; si es el último, cierra el teclado (en toda la app)
+  const camposDe = el => { const c = el.closest('.modal:not([hidden]), .login:not([hidden]), .screen.active') || document.body;
+    return [...c.querySelectorAll('input, select, textarea')].filter(x => !x.disabled && !x.readOnly && !/^(hidden|file|checkbox|radio|button|submit|range|color)$/.test(x.type) && x.offsetParent !== null); };
+  const esTexto = el => el && el.matches && el.matches('input') && !/^(hidden|file|checkbox|radio|button|submit|range|color)$/.test(el.type);
+  document.addEventListener('focusin', e => { const el = e.target; if(!esTexto(el)) return; const cs = camposDe(el); el.enterKeyHint = (cs.indexOf(el) < cs.length - 1 && el.type !== 'search') ? 'next' : 'done'; });
+  document.addEventListener('keydown', e => {
+    if(e.key !== 'Enter' || e.isComposing) return;
+    const el = e.target; if(!esTexto(el)) return;
+    setTimeout(() => {
+      if(document.activeElement !== el) return; // si el campo ya hizo su acción (buscar, entrar…), no se toca
+      const cs = camposDe(el), sig = cs[cs.indexOf(el) + 1];
+      if(sig && el.type !== 'search') sig.focus(); else el.blur();
+    }, 0);
+  });
   // Contacto y Acerca de
   $('#cfgContacto').addEventListener('click', () => { $('#contactoModal').hidden = false; });
   $('#ctCerrar').addEventListener('click', () => { $('#contactoModal').hidden = true; });
