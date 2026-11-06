@@ -3531,7 +3531,7 @@ body.sin-eco #infEnviar, body.sin-eco #frEnviar, body.sin-eco #anioEnviar{ displ
   <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="acTit">
     <h3 id="acTit">Acerca de GestFeria</h3>
     <p>Taquilla y gestión para atracciones de feria: venta de tickets, cierres, informes, usuarios, sampler y música.</p>
-    <p><b>Versión:</b> <span id="acVer">0.7.0</span></p>
+    <p><b>Versión:</b> <span id="acVer">0.7.1</span></p>
     <p class="tk-emp-nota">© 2026 GestFeria · Todos los derechos reservados</p>
     <div class="m-actions"><button class="btn-primary" id="acCerrar">Cerrar</button></div>
   </div>
@@ -9522,7 +9522,7 @@ const mismoNombre = (a, b) => normNombre(a) === normNombre(b);
     $('#primerAdmin').hidden = false; setTimeout(() => $('#paNom').focus(), 60);
   }
   // Verificación del correo: la app envía un código de 6 números a través del servidor configurado en Desarrollador
-  const correoCfg = () => Object.assign({ url:'https://gestferia.es/verificar-correo.php', clave:'42e5f3e4ea58675a4d93cb7a' }, store.get('kiosk-servidor-correo', {}) || {});
+  const correoCfg = () => { const g = store.get('kiosk-servidor-correo', {}) || {}; return { url: (g.url || '').trim() || 'https://gestferia.es/verificar-correo.php', clave: (g.clave || '').trim() || '42e5f3e4ea58675a4d93cb7a' }; }; // si se dejó vacío en Desarrollador, se usa el servidor de GestFeria
   const correoValido = t => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(t || '').trim());
   let paCodigo = null;
   async function postCorreo(url, datos){
