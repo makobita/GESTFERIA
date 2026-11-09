@@ -1533,6 +1533,19 @@ body.partida.partida-inv .screen.der{ grid-column:1; border-left:0; padding-left
 :is(body.partida, body.vertical) .smp-top > .smp-fx{ flex:1 1 100%; order:9; }
 :is(body.partida, body.vertical) .smp-fx{ grid-template-columns:repeat(6,1fr); grid-auto-rows:auto; }
 :is(body.partida, body.vertical) .smp-pg{ gap:8px; }
+/* Pantalla partida: el control rápido de música solo en Venta (no en el sampler) */
+body.partida #miniMus{ display:none !important; }
+/* Música local en vertical o en pantalla partida: reproductor arriba (compacto) y la lista debajo */
+:is(body.partida, body.vertical) .mus{ grid-template-columns:minmax(0,1fr); grid-template-rows:auto minmax(0,1fr); }
+:is(body.partida, body.vertical) .mus-player{ display:grid; grid-template-columns:auto minmax(0,1fr); grid-template-areas:"art info" "prog prog" "tiem tiem" "ctl ctl" "vol vol"; gap:8px 14px; padding:14px; }
+:is(body.partida, body.vertical) .mus-player .mus-cab{ display:contents; }
+:is(body.partida, body.vertical) .mus-art{ grid-area:art; width:72px; height:72px; }
+:is(body.partida, body.vertical) .mus-info{ grid-area:info; align-self:center; min-width:0; }
+:is(body.partida, body.vertical) .mus-prog{ grid-area:prog; } :is(body.partida, body.vertical) .mus-tiempos{ grid-area:tiem; } :is(body.partida, body.vertical) .mus-ctl{ grid-area:ctl; } :is(body.partida, body.vertical) .mus-vol{ grid-area:vol; }
+:is(body.partida, body.vertical) .mus-ctl > *{ flex:0 0 auto; aspect-ratio:1; }
+:is(body.partida, body.vertical) .mus-player > *:not(.mus-cab){ grid-column:1 / -1; }
+:is(body.partida, body.vertical) .mus-player .mus-info{ grid-column:2; grid-row:1; min-width:0; }
+:is(body.partida, body.vertical) .mus-player .mus-art{ grid-column:1; grid-row:1; }
 :is(body.partida, body.vertical) .smp-vp{ display:flex; flex-direction:column; }
 :is(body.partida, body.vertical) .smp-track{ flex:1 1 auto; height:auto; min-height:0; }
 :is(body.partida, body.vertical) .smp-track > .smp-pg{ height:auto; align-self:stretch; }
@@ -1541,7 +1554,13 @@ body.vertical .keypad{ grid-template-rows:repeat(5,minmax(0,1fr)) minmax(0,1.1fr
 body.partida #offers{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
 body.partida #offers > .offer{ display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:4px 8px; padding:8px 10px; border:1px solid var(--line); border-radius:14px; }
 body.partida #offers > .offer > :last-child{ grid-column:1 / -1; }
-body.partida #offers .offer-btn{ width:100%; justify-content:center; height:34px; min-height:0; }
+body.partida #offers > .offer{ position:relative; min-height:96px; border:0; padding:14px 18px 44px; overflow:hidden; align-items:center; column-gap:12px; }
+body.partida #offers > .offer b, body.partida #offers > .offer strong{ font-size:clamp(16px,2.2vh,20px); }
+body.partida #offers > .offer > :nth-child(2):not(.offer-btn){ font-size:clamp(20px,2.8vh,26px); font-weight:800; }
+body.partida #offers .offer-btn::before{ content:""; position:absolute; left:14px; right:14px; bottom:34px; border-top:1px solid rgba(255,255,255,.25); }
+body.partida #offers > .offer > :not(.offer-btn){ position:relative; z-index:1; pointer-events:none; }
+body.partida #offers .offer-btn{ grid-column:auto !important; grid-row:auto !important; position:absolute; inset:0; left:0; right:0; top:0; bottom:0; margin:0; width:auto !important; height:auto !important; min-height:0; border-radius:16px; display:flex; align-items:flex-end; justify-content:center; padding-bottom:9px; z-index:0; font-size:15px; letter-spacing:.02em; }
+body.partida #offers .offer-btn[data-modo="directa"] ~ *, body.partida #offers .offer:has(.offer-btn[data-modo="directa"]) > :not(.offer-btn), body.partida #offers .offer:has(.offer-btn[data-modo="directa"]) > :not(.offer-btn) *{ color:#fff !important; }
 body.partida .venta-main, body.partida .venta-main.invertida{ grid-template-rows:auto minmax(0,1fr) !important; }
 body.partida .venta-main > .keypad{ min-height:0; height:100%; overflow:hidden; }
 body.partida .venta-main .amount-wrap{ display:grid; grid-template-columns:auto minmax(0,1fr); grid-template-areas:"ban ban" "qlb top" "meta imp"; align-items:end; column-gap:16px; }
@@ -3632,7 +3651,7 @@ body.sin-eco #infEnviar, body.sin-eco #frEnviar, body.sin-eco #anioEnviar{ displ
   <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="acTit">
     <h3 id="acTit">Acerca de GestFeria</h3>
     <p>Taquilla y gestión para atracciones de feria: venta de tickets, cierres, informes, usuarios, sampler y música.</p>
-    <p><b>Versión:</b> <span id="acVer">0.7.20</span></p>
+    <p><b>Versión:</b> <span id="acVer">0.7.23</span></p>
     <p class="tk-emp-nota">© 2026 GestFeria · Todos los derechos reservados</p>
     <div class="m-actions"><button class="btn-primary" id="acCerrar">Cerrar</button></div>
   </div>
@@ -9979,7 +9998,7 @@ const mismoNombre = (a, b) => normNombre(a) === normNombre(b);
     if(on){
       const izq = document.querySelector('.screen.active');
       if(izq && AUDIO_SC.includes(izq.id.slice(2))) go('home');
-      const d = store.get('kiosk-partida-der', 'sampler'); window.ponerDer(AUDIO_SC.includes(d) ? d : 'sampler');
+      const d = store.get('kiosk-partida-der', 'audio'); window.ponerDer(AUDIO_SC.includes(d) ? d : 'audio'); // la primera vez, el menú de Audio; después, lo último que hubiera
     } else $$('.screen.der').forEach(s => s.classList.remove('der'));
   }
   $('#partidaCambio').addEventListener('click', () => { store.set('kiosk-partida-inv', store.get('kiosk-partida-inv', false) !== true); aplicarPartida(); });
