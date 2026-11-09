@@ -20,10 +20,11 @@ for (const p of permisos) {
   const nombre = p.match(/android:name="([^"]+)"/)[1];
   if (!xml.includes('"' + nombre + '"')) { xml = xml.replace('</manifest>', '    ' + p + '\n</manifest>'); añadidos++; }
 }
-// Siempre en horizontal: la app gira entre los dos lados horizontales, pero nunca se pone en vertical
+// La app gira libremente (vertical u horizontal); en pantalla partida la propia app la bloquea en horizontal
+xml = xml.replace(/ android:screenOrientation="[^"]*"/g, ''); // se puede usar en vertical u horizontal
 if (!/android:screenOrientation=/.test(xml)) {
-  xml = xml.replace(/<activity\b/, '<activity android:screenOrientation="sensorLandscape"');
-  console.log('Orientación fijada en horizontal');
+  xml = xml.replace(/<activity\b/, '<activity android:screenOrientation="fullSensor"');
+  console.log('Orientación libre');
 }
 // Vuelta del inicio de sesión de Spotify: el enlace es.feria.ventatickets://spotify-callback abre la app
 if (!xml.includes('spotify-callback')) {
